@@ -1,3 +1,9 @@
+<?php
+if (!isset($user) || !is_array($user)) {
+    header('Location: ../login.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,12 +54,26 @@
                 <p class="text-[11px] text-slate-400">Business Intelligence & Profitability Analytics</p>
             </div>
         </div>
-        <a href="#" class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white border border-transparent hover:border-slate-600 transition">
-            <span class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
-                <i data-lucide="user-round" class="w-4 h-4"></i>
-            </span>
-            Profile
-        </a>
+        <div class="flex items-center gap-2 sm:gap-3">
+            <div id="liveIndicator" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400 transition">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live
+                <span id="lastSyncLabel" class="text-emerald-300/70 font-normal">• —</span>
+            </div>
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900/40">
+                <span class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                    <i data-lucide="user-round" class="w-4 h-4"></i>
+                </span>
+                <div class="hidden sm:block leading-tight">
+                    <p id="currentUserName" class="text-xs font-semibold text-slate-200"><?= htmlspecialchars($user['fullName'] ?? $user['username'] ?? 'Administrator', ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-[10px] text-slate-500">Administrator</p>
+                </div>
+            </div>
+            <button onclick="logout(event)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition" title="Keluar">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Logout</span>
+            </button>
+        </div>
     </header>
 
     <!-- Main Workspace -->
@@ -75,7 +95,10 @@
                     </button>
                     <button onclick="switchTab('alerts')" id="nav-alerts" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-800/80 hover:text-slate-200 transition">
                         <i data-lucide="shield-alert" class="w-4 h-4"></i> Risk & Alerts
-                        <span class="ml-auto bg-rose-500/20 text-rose-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">18.7%</span>
+                        <span id="navAlertBadge" class="ml-auto bg-rose-500/20 text-rose-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">—</span>
+                    </button>
+                    <button onclick="switchTab('etl')" id="nav-etl" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-800/80 hover:text-slate-200 transition">
+                        <i data-lucide="database" class="w-4 h-4"></i> Add Transaction
                     </button>
                 </nav>
             </div>
@@ -89,6 +112,15 @@
 
         <!-- Main Content Scrollable Area -->
         <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+            <!-- Connection / data error banner -->
+            <div id="dataErrorBanner" class="hidden items-start gap-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl px-4 py-3 text-xs text-rose-300">
+                <i data-lucide="wifi-off" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                <div>
+                    <p class="font-semibold text-rose-200">Koneksi data bermasalah</p>
+                    <p data-error-text class="text-rose-300/90 mt-0.5">—</p>
+                </div>
+            </div>
 
             <!-- TOP KPI CARDS (Executive Metrics) -->
             <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -177,8 +209,8 @@
                         <div class="h-60 flex items-center justify-center">
                             <canvas id="categoryPieChart"></canvas>
                         </div>
-                        <div class="mt-3 text-xs text-slate-400 text-center">
-                            <span class="text-rose-400 font-medium">Furniture</span> yields lowest profit margin (~2.49%)
+                        <div id="categoryInsight" class="mt-3 text-xs text-slate-400 text-center">
+                            —
                         </div>
                     </div>
                 </div>
@@ -330,7 +362,7 @@
                             <div class="space-y-2 py-3 border-y border-slate-800/80 my-3 text-xs">
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Baseline Profit:</span>
-                                    <span class="text-slate-200 font-semibold">$286,241</span>
+                                    <span id="whatifBaselineProfit" class="text-slate-200 font-semibold">$0</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Simulated New Profit:</span>
@@ -398,6 +430,104 @@
                 </div>
             </div>
 
+            <!-- TAB 5: DATA MANAGEMENT & ETL -->
+            <div id="tab-etl" class="hidden space-y-6">
+                <!-- ETL status cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-400">ETL Status</p>
+                        <p id="etlStatusBadge" class="text-lg font-bold text-slate-300 mt-1">Loading…</p>
+                        <p id="etlLastRun" class="text-[11px] text-slate-500 mt-1">—</p>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-400">Source Rows</p>
+                        <p id="etlSourceRows" class="text-lg font-bold text-white mt-1">—</p>
+                        <p class="text-[11px] text-slate-500 mt-1">fact_sales</p>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-400">Warehouse Rows</p>
+                        <p id="etlWarehouseRows" class="text-lg font-bold text-sky-400 mt-1">—</p>
+                        <p class="text-[11px] text-slate-500 mt-1">dw_sales_summary</p>
+                    </div>
+                    <div class="bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl">
+                        <p class="text-[11px] uppercase tracking-wider text-slate-400">Rejected Rows</p>
+                        <p id="etlRejected" class="text-lg font-bold text-amber-400 mt-1">—</p>
+                        <p id="etlDuration" class="text-[11px] text-slate-500 mt-1">—</p>
+                    </div>
+                </div>
+
+                <!-- Pipeline information -->
+                <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-semibold text-base text-white">ETL Pipeline: Extract → Transform → Load</h3>
+                        <p class="text-xs text-slate-400 mt-1">Setiap create/update/delete otomatis memicu rebuild warehouse sehingga KPI dan seluruh chart mengikuti data secara real-time.</p>
+                        <p id="etlFingerprint" class="text-[10px] text-slate-500 mt-2 font-mono break-all">—</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="refreshEtlWorkspace()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-2 rounded-xl transition">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+                        </button>
+                        <button onclick="runEtlNow()" id="btnRunEtl" class="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-lg shadow-sky-900/30">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Run ETL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Transaction CRUD -->
+                <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5">
+                    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="font-semibold text-base text-white">Transaction CRUD</h3>
+                            <p class="text-xs text-slate-400">Kelola baris <span class="font-mono text-slate-300">fact_sales</span>. Perubahan langsung disinkronkan ke dashboard.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input id="txSearch" type="search" placeholder="Cari ID / kota / sub-kategori"
+                                   class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-xs text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2 outline-none transition w-52">
+                            <select id="filterRegion" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition"></select>
+                            <select id="filterCategory" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition"></select>
+                            <select id="filterProfit" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition">
+                                <option value="">Semua Profit</option>
+                                <option value="loss">Loss Only</option>
+                                <option value="profit">Profit Only</option>
+                            </select>
+                            <button onclick="resetTxFilters()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-2 rounded-xl transition">Reset</button>
+                            <button onclick="openTransactionModal()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-lg shadow-emerald-900/30">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Transaksi
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                                    <th class="p-3">ID / Ship</th>
+                                    <th class="p-3">Region / Location</th>
+                                    <th class="p-3">Category / Sub</th>
+                                    <th class="p-3 text-right">Sales</th>
+                                    <th class="p-3 text-right">Qty</th>
+                                    <th class="p-3 text-right">Discount</th>
+                                    <th class="p-3 text-right">Profit</th>
+                                    <th class="p-3 text-right">Status</th>
+                                    <th class="p-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txTableBody" class="divide-y divide-slate-800 text-slate-300">
+                                <tr><td colspan="9" class="p-6 text-center text-slate-400">Memuat transaksi…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
+                        <p id="txPaginationInfo" class="text-[11px] text-slate-400">—</p>
+                        <div class="flex gap-2">
+                            <button id="txPrev" onclick="changeTxPage(-1)" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
+                            <button id="txNext" onclick="changeTxPage(1)" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -410,11 +540,100 @@
         </div>
     </div>
 
+    <!-- Global toast for CRUD/ETL feedback -->
+    <div id="appToast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] bg-emerald-600 text-white text-xs px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 translate-y-24 opacity-0 pointer-events-none transition-all duration-300">
+        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        <p id="appToastText" class="font-medium">—</p>
+    </div>
+
+    <!-- Transaction CRUD modal -->
+    <div id="txModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+                <div>
+                    <h3 id="txModalTitle" class="font-semibold text-white">Tambah Transaksi</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Simpan perubahan untuk memicu ETL otomatis.</p>
+                </div>
+                <button onclick="closeTransactionModal()" class="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition" aria-label="Tutup">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="txForm" onsubmit="submitTransaction(event)" class="p-6 space-y-4">
+                <input type="hidden" id="txId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Region</label>
+                        <select id="txRegion" onchange="handleTxRegionChange()" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Lokasi (State / City)</label>
+                        <select id="txLocation" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Kategori</label>
+                        <select id="txCategory" onchange="handleTxCategoryChange()" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Sub-Kategori</label>
+                        <select id="txSubcategory" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Ship Mode</label>
+                        <select id="txShipMode" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Segment</label>
+                        <select id="txSegment" required
+                                class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2.5 outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Sales ($)</label>
+                        <input type="number" id="txSales" min="0" step="0.0001" required oninput="updateTxMarginPreview()"
+                               class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-100 rounded-xl px-3 py-2.5 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Quantity</label>
+                        <input type="number" id="txQuantity" min="1" step="1" value="1" required oninput="updateTxMarginPreview()"
+                               class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-100 rounded-xl px-3 py-2.5 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Discount (%)</label>
+                        <input type="number" id="txDiscount" min="0" max="100" step="1" value="0" required oninput="updateTxMarginPreview()"
+                               class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-100 rounded-xl px-3 py-2.5 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1.5">Profit ($)</label>
+                        <input type="number" id="txProfit" step="0.0001" required oninput="updateTxMarginPreview()"
+                               class="w-full bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-100 rounded-xl px-3 py-2.5 outline-none transition">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-3">
+                    <span class="text-[11px] text-slate-400">Projected Margin</span>
+                    <span id="txMarginPreview" class="text-sm font-bold text-emerald-400">0.00%</span>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeTransactionModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-4 py-2.5 rounded-xl transition">Batal</button>
+                    <button type="submit" id="txSubmitBtn" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-sky-900/30">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT (Urut) -->
-    <script src="js/data.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/drilldown.js"></script>
     <script src="js/whatif.js"></script>
+    <script src="js/etl.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

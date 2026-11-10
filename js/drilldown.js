@@ -238,35 +238,48 @@ function updateBreadcrumbs() {
     container.innerHTML = html;
 }
 
-function renderRootCauseTable(region, subcategory) {
+async function renderRootCauseTable(region, subcategory) {
     const tbody = document.getElementById('drillTxTableBody');
-    const filtered = sampleLeakTransactions.filter(t => t.subCat === subcategory || subcategory === 'Tables');
+    if (!tbody) return;
 
-    let html = '';
-    filtered.forEach(t => {
-        const isLoss = t.profit < 0;
-        html += `
-            <tr class="hover:bg-slate-800/50 transition">
-                <td class="p-3">
-                    <p class="font-bold text-white">${t.orderId}</p>
-                    <p class="text-[10px] text-slate-400">${t.customer}</p>
-                </td>
-                <td class="p-3 text-slate-300">${t.region} (${t.state})</td>
-                <td class="p-3 text-slate-300">${t.subCat}</td>
-                <td class="p-3 text-slate-300">$${t.sales.toFixed(2)}</td>
-                <td class="p-3">
-                    <span class="${t.discount >= 0.3 ? 'bg-rose-500/20 text-rose-400 font-bold px-2 py-0.5 rounded border border-rose-500/30' : 'text-slate-300'}">
-                        ${(t.discount*100).toFixed(0)}%
-                    </span>
-                </td>
-                <td class="p-3 font-bold ${isLoss ? 'text-rose-400' : 'text-emerald-400'}">
-                    $${t.profit.toFixed(2)}
-                </td>
-                <td class="p-3">
-                    ${isLoss ? '<span class="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded">Margin Leak</span>' : '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Healthy</span>'}
-                </td>
-            </tr>
-        `;
-    });
-    tbody.innerHTML = html || `<tr><td colspan="7" class="p-4 text-center text-slate-400">No toxic discount transactions detected for this node.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Memuat transaksi dari database…</td></tr>`;
+
+    try {
+        const params = new URLSearchParams({ subcategory });
+        if (region) params.set('region', region);
+
+        const payload = await apiFetch(`api/leaks.php?${params.toString()}`);
+        const rows = payload.rows || [];
+
+        let html = '';
+        rows.forEach(t => {
+            const isLoss = t.profit < 0;
+            html += `
+                <tr class="hover:bg-slate-800/50 transition">
+                    <td class="p-3">
+                        <p class="font-bold text-white">${escapeHtml(t.orderId)}</p>
+                        <p class="text-[10px] text-slate-400">${escapeHtml(t.customer)}</p>
+                    </td>
+                    <td class="p-3 text-slate-300">${escapeHtml(t.region)} (${escapeHtml(t.state)})</td>
+                    <td class="p-3 text-slate-300">${escapeHtml(t.subCat)}</td>
+                    <td class="p-3 text-slate-300">$${t.sales.toFixed(2)}</td>
+                    <td class="p-3">
+                        <span class="${t.discount >= 0.3 ? 'bg-rose-500/20 text-rose-400 font-bold px-2 py-0.5 rounded border border-rose-500/30' : 'text-slate-300'}">
+                            ${(t.discount * 100).toFixed(0)}%
+                        </span>
+                    </td>
+                    <td class="p-3 font-bold ${isLoss ? 'text-rose-400' : 'text-emerald-400'}">
+                        $${t.profit.toFixed(2)}
+                    </td>
+                    <td class="p-3">
+                        ${isLoss ? '<span class="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded">Margin Leak</span>' : '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Healthy</span>'}
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html || `<tr><td colspan="7" class="p-4 text-center text-slate-400">No toxic discount transactions detected for this node.</td></tr>`;
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400">Gagal memuat transaksi: ${escapeHtml(error.message)}</td></tr>`;
+    }
 }

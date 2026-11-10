@@ -17,5 +17,8 @@ function runWhatIfSimulation() {
     document.getElementById('whatifNewProfit').textContent = `$${Math.round(newProfit).toLocaleString()}`;
     document.getElementById('whatifNewMargin').textContent = `${newMargin}%`;
 
+    const baselineEl = document.getElementById('whatifBaselineProfit');
+    if (baselineEl) baselineEl.textContent = `$${Math.round(baselineProfit).toLocaleString()}`;
+
     renderWhatIfChart(capVal, recoveredAmount);
 }

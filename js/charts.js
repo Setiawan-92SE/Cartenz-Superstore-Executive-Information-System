@@ -47,20 +47,18 @@ function initDashboardCharts() {
         }
     });
 
-    // Category Pie Chart
+    // Category Pie Chart (label mengikuti kategori yang ada di database)
+    const categoryLabels = Object.keys(totals.catProfit || {}).sort();
+    const categoryPalette = ['#0284c7', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#14b8a6', '#ec4899'];
     const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
     if (charts.categoryPie) charts.categoryPie.destroy();
     charts.categoryPie = new Chart(pieCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Technology', 'Office Supplies', 'Furniture'],
+            labels: categoryLabels,
             datasets: [{
-                data: [
-                    totals.catProfit['Technology'],
-                    totals.catProfit['Office Supplies'],
-                    totals.catProfit['Furniture']
-                ],
-                backgroundColor: ['#0284c7', '#10b981', '#f43f5e'],
+                data: categoryLabels.map(c => totals.catProfit[c]),
+                backgroundColor: categoryLabels.map((_, i) => categoryPalette[i % categoryPalette.length]),
                 borderWidth: 0
             }]
         },
@@ -80,6 +78,22 @@ function initDashboardCharts() {
             }
         }
     });
+
+    const insight = document.getElementById('categoryInsight');
+    if (insight) {
+        const categoryMargins = Object.keys(totals.catProfit || {}).map(name => ({
+            name,
+            margin: totals.catSales?.[name]
+                ? (totals.catProfit[name] / totals.catSales[name]) * 100
+                : 0
+        })).sort((a, b) => a.margin - b.margin);
+
+        if (categoryMargins.length) {
+            insight.innerHTML = `<span class="text-rose-400 font-medium">${categoryMargins[0].name}</span> yields lowest profit margin (${categoryMargins[0].margin.toFixed(2)}%)`;
+        } else {
+            insight.textContent = '';
+        }
+    }
 
     // Sub-Category Bar Chart (all 17, sorted by profit desc)
     const subcats = Object.keys(totals.subProfit).sort((a, b) => totals.subProfit[b] - totals.subProfit[a]);
@@ -181,9 +195,15 @@ function renderDrillChart(labels, sales, profit) {
 }
 
 function renderWhatIfChart(capVal, recovered) {
-    const actualLabels = ['Tables', 'Bookcases', 'Supplies', 'Machines', 'Chairs'];
+    const actualLabels = Object.keys(totals.subProfit || {})
+        .sort((a, b) => totals.subProfit[a] - totals.subProfit[b])
+        .slice(0, 6);
     const actual = actualLabels.map(s => totals.subProfit[s]);
-    const shares = [0.4, 0.2, 0.15, 0.1, 0.15]; // how recovered profit is distributed per bar
+    const lossWeights = actual.map(v => Math.max(0, -v));
+    const weightTotal = lossWeights.reduce((sum, v) => sum + v, 0);
+    const shares = weightTotal > 0
+        ? lossWeights.map(v => v / weightTotal)
+        : actual.map(() => (actual.length ? 1 / actual.length : 0));
     const ctx = document.getElementById('whatIfChart').getContext('2d');
     if (charts.whatif) charts.whatif.destroy();
 
