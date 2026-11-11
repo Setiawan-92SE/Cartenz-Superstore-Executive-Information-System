@@ -87,9 +87,6 @@ $csrf = csrf_token();
             </div>
 
             <div class="relative max-w-md">
-                <span class="inline-block px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[11px] font-semibold uppercase tracking-wider mb-5">
-                    Admin Area
-                </span>
                 <h1 class="text-4xl font-extrabold leading-tight text-white">
                     Kendalikan data.<br>
                     <span class="text-sky-400">Lihat insight</span> secara real-time.
@@ -186,12 +183,6 @@ $csrf = csrf_token();
                             Masuk ke Dashboard
                         </button>
                     </form>
-
-                    <div class="mt-5 bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-400">
-                        <p class="font-semibold text-slate-300 mb-1">Akun default (dibuat otomatis)</p>
-                        <p>Username: <code class="text-sky-300">admin</code> &nbsp;·&nbsp; Password: <code class="text-sky-300">admin123</code></p>
-                        <p class="mt-1 text-slate-500">Database: db_superstore · MySQL port 3307</p>
-                    </div>
                 </div>
 
                 <p class="text-center text-[11px] text-slate-600 mt-6">

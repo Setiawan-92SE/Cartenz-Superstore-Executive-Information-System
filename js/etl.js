@@ -29,7 +29,7 @@ async function initEtlWorkspace() {
         lucide.createIcons();
     } catch (error) {
         console.error(error);
-        showToast(error.message || 'Gagal memuat ETL workspace.', 'error');
+        showToast(error.message || 'Failed to load ETL workspace.', 'error');
     }
 }
 
@@ -49,7 +49,7 @@ async function refreshEtlPanel() {
 async function refreshEtlWorkspace() {
     try {
         await Promise.all([loadEtlStatus(), loadTransactions()]);
-        showToast('ETL workspace diperbarui.', 'success');
+        showToast('ETL workspace updated.', 'success');
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -61,12 +61,12 @@ async function loadMasterData() {
     const payload = await apiFetch('api/master.php');
     etlState.master = payload;
 
-    fillSelect('filterRegion', payload.regions, 'region_name', 'region_name', 'Semua Region');
-    fillSelect('filterCategory', payload.categories, 'category_name', 'category_name', 'Semua Kategori');
-    fillSelect('txShipMode', payload.shipModes, 'ship_mode_id', 'ship_mode_name', 'Pilih ship mode');
-    fillSelect('txSegment', payload.segments, 'segment_id', 'segment_name', 'Pilih segment');
-    fillSelect('txRegion', payload.regions, 'region_id', 'region_name', 'Pilih region');
-    fillSelect('txCategory', payload.categories, 'category_id', 'category_name', 'Pilih kategori');
+    fillSelect('filterRegion', payload.regions, 'region_name', 'region_name', 'All Region');
+    fillSelect('filterCategory', payload.categories, 'category_name', 'category_name', 'All Kategori');
+    fillSelect('txShipMode', payload.shipModes, 'ship_mode_id', 'ship_mode_name', 'Choose Ship Mode');
+    fillSelect('txSegment', payload.segments, 'segment_id', 'segment_name', 'Choose Segment');
+    fillSelect('txRegion', payload.regions, 'region_id', 'region_name', 'Choose Region');
+    fillSelect('txCategory', payload.categories, 'category_id', 'category_name', 'Choose Category');
 
     populateTxSubcategories('');
     populateTxLocations('');
@@ -111,7 +111,7 @@ function populateTxSubcategories(categoryId, selected = '') {
         return categoryId === '' || categoryId === null || String(category.category_id) === String(categoryId);
     });
 
-    let html = '<option value="">Pilih sub-kategori</option>';
+    let html = '<option value="">Choose Sub-category</option>';
     categories.forEach((category) => {
         html += `<optgroup label="${escapeHtml(category.category_name)}">`;
         (category.subcategories || []).forEach((sub) => {
@@ -466,19 +466,19 @@ async function submitTransaction(event) {
     };
 
     if (!payload.ship_mode_id || !payload.segment_id || !payload.location_id || !payload.subcategory_id) {
-        showToast('Lengkapi ship mode, segment, lokasi, dan sub-kategori.', 'warning');
+        showToast('Complete ship mode, segment, lokasi, dan sub-kategori.', 'warning');
         return;
     }
     if (payload.sales < 0) {
-        showToast('Sales tidak boleh negatif.', 'warning');
+        showToast('Sales can not be negative.', 'warning');
         return;
     }
     if (payload.quantity < 1) {
-        showToast('Quantity minimal 1.', 'warning');
+        showToast('Minimum quantity 1.', 'warning');
         return;
     }
     if (payload.discount < 0 || payload.discount > 1) {
-        showToast('Discount harus di antara 0% dan 100%.', 'warning');
+        showToast('Discount must be between 0% and 100%.', 'warning');
         return;
     }
 
@@ -490,7 +490,7 @@ async function submitTransaction(event) {
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-        submitBtn.textContent = 'Menyimpan...';
+        submitBtn.textContent = 'Saving...';
     }
 
     try {
@@ -500,7 +500,7 @@ async function submitTransaction(event) {
         });
 
         closeTransactionModal();
-        showToast(result.message || 'Transaksi berhasil disimpan.', 'success');
+        showToast(result.message || 'Transaction saved successfully.', 'success');
 
         await refreshLiveData();
         await Promise.all([loadEtlStatus(), loadTransactions()]);
@@ -517,7 +517,7 @@ async function submitTransaction(event) {
 }
 
 async function deleteTransaction(saleId) {
-    if (!window.confirm(`Hapus transaksi #${saleId}? ETL akan dijalankan ulang dan chart langsung diperbarui.`)) {
+    if (!window.confirm(`Delete transaction #${saleId}? ETL will be rerun dan chart will updated.`)) {
         return;
     }
 
@@ -527,7 +527,7 @@ async function deleteTransaction(saleId) {
             body: JSON.stringify({ sale_id: saleId }),
         });
 
-        showToast(result.message || 'Transaksi berhasil dihapus.', 'success');
+        showToast(result.message || 'Transaction deleted successfully.', 'success');
         await refreshLiveData();
         await Promise.all([loadEtlStatus(), loadTransactions()]);
     } catch (error) {

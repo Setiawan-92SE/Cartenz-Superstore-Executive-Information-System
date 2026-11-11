@@ -65,7 +65,7 @@ if (!isset($user) || !is_array($user)) {
                     <i data-lucide="user-round" class="w-4 h-4"></i>
                 </span>
                 <div class="hidden sm:block leading-tight">
-                    <p id="currentUserName" class="text-xs font-semibold text-slate-200"><?= htmlspecialchars($user['fullName'] ?? $user['username'] ?? 'Administrator', ENT_QUOTES, 'UTF-8') ?></p>
+                    <p id="currentUserName" class="text-xs font-semibold text-slate-200"><?= htmlspecialchars($user['fullName'] ?? $user['username'] ?? 'https://github.com/Setiawan-92SE/Cartenz-Superstore-Executive-Information-Systemistrator', ENT_QUOTES, 'UTF-8') ?></p>
                     <p class="text-[10px] text-slate-500">Administrator</p>
                 </div>
             </div>
@@ -460,7 +460,7 @@ if (!isset($user) || !is_array($user)) {
                 <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h3 class="font-semibold text-base text-white">ETL Pipeline: Extract → Transform → Load</h3>
-                        <p class="text-xs text-slate-400 mt-1">Setiap create/update/delete otomatis memicu rebuild warehouse sehingga KPI dan seluruh chart mengikuti data secara real-time.</p>
+                        <p class="text-xs text-slate-400 mt-1">Every create/update/delete automatically rebuild the warehouse. Use "Run ETL" button in case of automatic sync doesn't work</p>
                         <p id="etlFingerprint" class="text-[10px] text-slate-500 mt-2 font-mono break-all">—</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -478,21 +478,21 @@ if (!isset($user) || !is_array($user)) {
                     <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-3 mb-4">
                         <div>
                             <h3 class="font-semibold text-base text-white">Transaction CRUD</h3>
-                            <p class="text-xs text-slate-400">Kelola baris <span class="font-mono text-slate-300">fact_sales</span>. Perubahan langsung disinkronkan ke dashboard.</p>
+                            <p class="text-xs text-slate-400">Managing <span class="font-mono text-slate-300">fact_sales</span> rows. Any changes are synced with the dashboard.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <input id="txSearch" type="search" placeholder="Cari ID / kota / sub-kategori"
+                            <input id="txSearch" type="search" placeholder="Find ID / location / sub-category"
                                    class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-xs text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2 outline-none transition w-52">
                             <select id="filterRegion" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition"></select>
                             <select id="filterCategory" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition"></select>
                             <select id="filterProfit" class="bg-slate-900/70 border border-slate-700 focus:border-sky-500 text-xs text-slate-200 rounded-xl px-3 py-2 outline-none transition">
-                                <option value="">Semua Profit</option>
+                                <option value="">All Profit</option>
                                 <option value="loss">Loss Only</option>
                                 <option value="profit">Profit Only</option>
                             </select>
                             <button onclick="resetTxFilters()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-2 rounded-xl transition">Reset</button>
                             <button onclick="openTransactionModal()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-lg shadow-emerald-900/30">
-                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Transaksi
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Transaction
                             </button>
                         </div>
                     </div>

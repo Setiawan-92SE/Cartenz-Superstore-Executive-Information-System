@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/config.php';
 
 /**
- * Koneksi PDO tunggal (singleton) ke database db_superstore.
+ * Koneksi PDO tunggal (singleton) ke database superstore_db.
  */
 function db(): PDO
 {

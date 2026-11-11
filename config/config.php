@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Database (sesuai permintaan: MySQL port 3307, database db_superstore)
+| Database
 |--------------------------------------------------------------------------
 | Ubah nilai di bawah jika kredensial server MySQL berbeda.
 */
 const DB_HOST = '127.0.0.1';
-const DB_PORT = '3307';
-const DB_NAME = 'db_superstore';
+const DB_PORT = '3306';
+const DB_NAME = 'superstore_db';
 const DB_USER = 'root';
-const DB_PASS = 'Online_user1';
+const DB_PASS = '';
 
 const APP_NAME = 'Cartenz Superstore EIS';
 
